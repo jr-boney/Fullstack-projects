@@ -1,6 +1,7 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
-const login = () => {
+const Login = () => {
   return (
     <div>
       <div className="relative mx-auto w-full max-w-md bg-white px-6 pt-10 pb-8 shadow-xl ring-1 ring-gray-900/5 sm:rounded-xl sm:px-10">
@@ -45,12 +46,14 @@ const login = () => {
                 </label>
               </div>
               <div className="my-6">
-                <button
-                  type="submit"
-                  className="w-full rounded-md bg-black px-3 py-4 text-white focus:bg-gray-600 focus:outline-none"
-                >
-                  Sign in
-                </button>
+                <Link to="/Zoom">
+                  <button
+                    type="submit"
+                    className="w-full rounded-md bg-black px-3 py-4 text-white focus:bg-gray-600 focus:outline-none"
+                  >
+                    Sign in
+                  </button>
+                </Link>
               </div>
               <p className="text-center text-sm text-gray-500">
                 Don&#x27;t have an account yet?
@@ -70,4 +73,4 @@ const login = () => {
   );
 };
 
-export default login;
+export default Login;
