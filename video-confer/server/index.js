@@ -11,6 +11,7 @@ const io = new Server(server);
 app.use(cors());
 
 app.get('/',(req,res) => {
+    //used socket.io for full duplex communication and also use webrtc for video and audio calling 
     console.log('req');
     return res.status(234).send('welcome')
 })
