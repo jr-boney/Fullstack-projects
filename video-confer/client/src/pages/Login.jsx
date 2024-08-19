@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
 const Login = () => {
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900">
       <div className="relative w-full max-w-md bg-gray-800 px-6 pt-10 pb-8 shadow-xl ring-1 ring-gray-700 sm:rounded-xl sm:px-10">
@@ -19,6 +22,8 @@ const Login = () => {
                   type="email"
                   name="email"
                   id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email Address"
                   className="peer mt-1 w-full border-b-2 border-gray-600 bg-transparent px-0 py-2 text-white placeholder-transparent focus:border-blue-500 focus:outline-none"
                   autoComplete="NA"
@@ -34,6 +39,8 @@ const Login = () => {
                 <input
                   type="password"
                   name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   id="password"
                   placeholder="Password"
                   className="peer mt-1 w-full border-b-2 border-gray-600 bg-transparent px-0 py-2 text-white placeholder-transparent focus:border-yellow-500 focus:outline-none"
@@ -57,12 +64,12 @@ const Login = () => {
               </div>
               <p className="text-center text-sm text-gray-400">
                 Don&#x27;t have an account yet?{" "}
-                <a
-                  href="#!"
+                <Link
+                  to="/signup"
                   className="font-semibold text-blue-400 hover:underline focus:text-blue-500 focus:outline-none"
                 >
                   Sign up
-                </a>
+                </Link>
                 .
               </p>
             </form>

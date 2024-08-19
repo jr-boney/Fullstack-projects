@@ -6,6 +6,12 @@ import {
   FaVideoSlash,
   FaPhoneSlash,
 } from "react-icons/fa";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+// import { toast } from "react-toastify";
+// import AlertMsg from "../components/AlertMsg.js";
+//This is not working when i put in AlertMsg component
 
 const Zoom = () => {
   const [mic, setMic] = useState(false);
@@ -13,10 +19,12 @@ const Zoom = () => {
 
   const toggleMic = () => {
     setMic(!mic);
+    toast(`Mic turned ${mic ? "On" : "Off"}`);
   };
 
   const toggleVideo = () => {
     setVid(!vid);
+    toast(`Video turned ${vid ? "On" : "Off"}`);
   };
 
   return (
@@ -38,6 +46,20 @@ const Zoom = () => {
                 <FaMicrophone className="text-white text-2xl" />
               )}
             </button>
+            <ToastContainer
+              position="top-left"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+              transition:Bounce
+            />
+            {/* <AlertMsg />  This is componenet is not working have to sort this out */}
           </div>
 
           <div>
