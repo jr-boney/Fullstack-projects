@@ -1,6 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import Login from "./pages/Login"; // Ensure correct path
+import Login from "./pages/Login";
 import Zoom from "./pages/Zoom";
 import SignUp from "./pages/SignUp";
 
