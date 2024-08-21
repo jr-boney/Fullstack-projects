@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.foot{
+
+    position: fixed;
+  left: 0;
+  bottom: 10px;
+  width: 100%;
+  text-align: center;
+    margin-top: auto;
+    text-shadow: 10cap;
+    color: #7851a9;
+}
