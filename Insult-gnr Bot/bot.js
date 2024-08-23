@@ -10,16 +10,13 @@ require("dotenv").config();
 
 const { Telegraf } = require("telegraf");
 const bot = new Telegraf(process.env.BOT_TOKEN);
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname + "/index.html"));
-});
+const { message } = require("telegraf/filters");
 
 bot.command("start", (ctx) => {
   console.log(ctx.from);
   bot.telegram.sendMessage(
     ctx.chat.id,
-    "Hello there! Welcome to my bot. Use /supp for more info.",
+    "Need motivation press /motivate . Use /supp for ethereum price.",
     {}
   );
 });
@@ -66,9 +63,11 @@ bot.command("jokes", async (ctx) => {
     );
   }
 });
+bot.on(message("sticker"), (ctx) => ctx.reply("what poppin homies"));
 
 bot.command("motivate", (ctx) => {
-  ctx.replyWithAudio({ source: "./motivation.mp3" });
+  ctx.replyWithAudio({ source: "./Audio/motivation.mp3" });
 });
+bot.command("hipster", Telegraf.reply("λ"));
 
 bot.launch();
