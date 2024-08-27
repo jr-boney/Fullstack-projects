@@ -11,6 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Peer from "peerjs";
 import io from "socket.io-client";
 import Webcam from "react-webcam";
+import Chat from "../components/Chat";
 
 const Zoom = () => {
   const [mic, setMic] = useState(true);
@@ -118,6 +119,7 @@ const Zoom = () => {
         </div>
 
         <div>
+          <Chat className="flex justify-end" />
           <button
             onClick={toggleVideo}
             className={`${
