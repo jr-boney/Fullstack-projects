@@ -6,6 +6,7 @@ import {
   FaVideoSlash,
   FaPhoneSlash,
 } from "react-icons/fa";
+import { BsChatLeftText } from "react-icons/bs";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Peer from "peerjs";
@@ -16,6 +17,7 @@ import Chat from "../components/Chat";
 const Zoom = () => {
   const [mic, setMic] = useState(true);
   const [vid, setVid] = useState(true);
+  const [chat, setChat] = useState(false);
   const [peerId, setPeerId] = useState("");
   const myVideo = useRef(null);
   const userVideo = useRef(null);
@@ -35,6 +37,10 @@ const Zoom = () => {
     if (myVideo.current && myVideo.current.stream) {
       myVideo.current.stream.getVideoTracks()[0].enabled = !vid;
     }
+  };
+
+  const toggle = () => {
+    setChat(!chat);
   };
 
   useEffect(() => {
@@ -83,7 +89,13 @@ const Zoom = () => {
   return (
     <div className="h-screen bg-gray-900 flex flex-col justify-center items-center">
       <div className="flex space-x-4 mb-4">
-        <Webcam
+        {chat && (
+          <div>
+            <Chat />
+          </div>
+        )}
+
+        {/* <Webcam
           audio={mic}
           video={vid}
           height={250}
@@ -98,7 +110,7 @@ const Zoom = () => {
           width={250}
           ref={userVideo}
           className="border-2 border-gray-600 rounded-lg"
-        />
+        /> */}
       </div>
       <div className="fixed bottom-5 left-0 right-0 bg-gray-800 h-16 mx-5 rounded-lg shadow-lg flex justify-around items-center z-50">
         <div>
@@ -119,7 +131,6 @@ const Zoom = () => {
         </div>
 
         <div>
-          <Chat className="flex justify-end" />
           <button
             onClick={toggleVideo}
             className={`${
@@ -139,6 +150,14 @@ const Zoom = () => {
         <div>
           <button className="bg-red-600 hover:bg-red-700 p-3 rounded-full">
             <FaPhoneSlash className="text-white text-2xl" />
+          </button>
+        </div>
+        <div>
+          <button
+            onClick={toggle}
+            className="bg-blue-500 hover:bg-blue-600 p-3 rounded-full"
+          >
+            <BsChatLeftText className="text-white text-2xl" />
           </button>
         </div>
       </div>
