@@ -103,6 +103,7 @@ const Zoom = () => {
           ref={myVideo}
           className="border-2 border-gray-600 rounded-lg"
         />
+       
         <Webcam
           audio={mic}
           video={vid}
