@@ -25,7 +25,7 @@ const Zoom = () => {
 
   const toggleMic = () => {
     setMic(!mic);
-    toast(`Mic turned ${mic ? "Off" : "On"}`);
+    toast(`Mic turned ${mic ? "On" : "Off"}`);
     if (myVideo.current && myVideo.current.stream) {
       myVideo.current.stream.getAudioTracks()[0].enabled = !mic;
     }
@@ -33,7 +33,7 @@ const Zoom = () => {
 
   const toggleVideo = () => {
     setVid(!vid);
-    toast(`Video turned ${vid ? "Off" : "On"}`);
+    toast(`Video turned ${vid ? "On" : "Off"}`);
     if (myVideo.current && myVideo.current.stream) {
       myVideo.current.stream.getVideoTracks()[0].enabled = !vid;
     }
