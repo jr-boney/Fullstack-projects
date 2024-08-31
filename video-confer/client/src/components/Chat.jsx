@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Socket } from "socket.io-client";
+import { socket } from "../socket";
 
 const Chat = () => {
   const inputRef = useRef(null);
@@ -9,11 +9,21 @@ const Chat = () => {
 
   const handleSendMessage = (msg) => {
     if (msg.trim()) {
-      setChatHistory([...chatHistory, msg]);
+      socket.emit("send_message", msg);
 
       setMessage("");
     }
   };
+
+  useEffect(() => {
+    socket.on("receive_message", (msg) => {
+      setChatHistory((previousChatHistory) => [...previousChatHistory, msg]);
+    });
+
+    return () => {
+      socket.off("receive_message");
+    };
+  }, []);
 
   useEffect(() => {
     if (scrollRef && scrollRef.current) {

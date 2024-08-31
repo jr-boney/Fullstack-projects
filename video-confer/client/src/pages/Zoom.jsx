@@ -25,7 +25,7 @@ const Zoom = () => {
 
   const toggleMic = () => {
     setMic(!mic);
-    toast(`Mic turned ${mic ? "On" : "Off"}`);
+    toast(`Mic turned ${mic ? "Off" : "On"}`);
     if (myVideo.current && myVideo.current.stream) {
       myVideo.current.stream.getAudioTracks()[0].enabled = !mic;
     }
@@ -33,7 +33,7 @@ const Zoom = () => {
 
   const toggleVideo = () => {
     setVid(!vid);
-    toast(`Video turned ${vid ? "On" : "Off"}`);
+    toast(`Video turned ${vid ? "Off" : "On"}`);
     if (myVideo.current && myVideo.current.stream) {
       myVideo.current.stream.getVideoTracks()[0].enabled = !vid;
     }
@@ -46,40 +46,13 @@ const Zoom = () => {
   useEffect(() => {
     socket.current = io("http://localhost:4000");
 
-    const peer = new Peer(undefined, {
-      path: "/peerjs",
-      host: "localhost",
-      port: "4000",
+    socket.current.on("connect", () => {
+      console.log("Connected to socket server with ID:", socket.current.id);
     });
 
-    peer.on("open", (id) => {
-      setPeerId(id);
-      socket.current.emit("join-room", "roomId", id);
+    socket.current.on("disconnect", () => {
+      console.log("Disconnected from socket server");
     });
-
-    navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
-      .then((stream) => {
-        myVideo.current.srcObject = stream;
-
-        peer.on("call", (call) => {
-          call.answer(stream);
-          call.on("stream", (userStream) => {
-            userVideo.current.srcObject = userStream;
-          });
-        });
-
-        socket.current.on("user-connected", (userId) => {
-          connectToNewUser(userId, stream);
-        });
-      });
-
-    function connectToNewUser(userId, stream) {
-      const call = peer.call(userId, stream);
-      call.on("stream", (userStream) => {
-        userVideo.current.srcObject = userStream;
-      });
-    }
 
     return () => {
       socket.current.disconnect();
@@ -95,7 +68,9 @@ const Zoom = () => {
           </div>
         )}
 
-        {/* <Webcam
+        {/* Uncomment and configure Webcam components if needed */}
+        {/* 
+        <Webcam
           audio={mic}
           video={vid}
           height={250}
@@ -111,7 +86,8 @@ const Zoom = () => {
           width={250}
           ref={userVideo}
           className="border-2 border-gray-600 rounded-lg"
-        /> */}
+        />
+        */}
       </div>
       <div className="fixed bottom-5 left-0 right-0 bg-gray-800 h-16 mx-5 rounded-lg shadow-lg flex justify-around items-center z-50">
         <div>
