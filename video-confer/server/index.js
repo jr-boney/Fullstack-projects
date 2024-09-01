@@ -5,49 +5,43 @@ import cors from "cors";
 import { Server } from "socket.io";
 import { ExpressPeerServer } from "peer";
 
+// Create the Express app and HTTP server
 const app = express();
 const server = createServer(app);
-const io = new Server(server);
 
+// Use CORS to allow requests from your client
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "http://localhost:5173", // Allow your frontend to connect
     methods: ["GET", "POST"],
-    credentials: true,
+    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
   })
 );
 
-// io.on("connection", (socket) => {
-//   console.log("a user connected:", socket.id);
+// Create the Socket.io server with CORS options
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // Allow your frontend to connect
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
-//   // socket.on('offer',(data) => {
-//   //     socket.broadcast.emit('offer',data)
-//   // });
+// Create a PeerJS server
+const peerServer = ExpressPeerServer(server, {
+  debug: true,
+  path: "/myapp",
+});
 
-//   // socket.on('answer',(data) => {
-//   //     socket.broadcast.emit('answer',data)
-//   // });
-//   // socket.on('ice-candidate',(data) => {
-//   //     socket.broadcast.emit('ice-candiate',data)
-//   // });
-
-//   // socket.on("join-room", (roomId, userId) => {
-//   //     socket.join(roomId);
-//   //     socket.to(roomId).emit("user-connected", userId);
-
-//   //     socket.on("disconnect", () => {
-//   //       socket.to(roomId).emit("user-disconnected", userId);
-//   //     });
-//   //   });
-
-// });
+// Use the PeerJS server
+app.use("/peerjs", peerServer);
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
   socket.on("send_message", (msg) => {
-    console.log("Received message:", msg); // Add this line
-    io.emit("receive_message", msg);
+    console.log("Received message:", msg); // Log the received message
+    io.emit("receive_message", msg); // Broadcast the message to all connected clients
   });
 
   socket.on("disconnect", () => {

@@ -18,9 +18,9 @@ const Zoom = () => {
   const [mic, setMic] = useState(true);
   const [vid, setVid] = useState(true);
   const [chat, setChat] = useState(false);
-  const [peerId, setPeerId] = useState("");
   const myVideo = useRef(null);
   const userVideo = useRef(null);
+  const peerInstance = useRef(null);
   const socket = useRef();
 
   const toggleMic = () => {
@@ -54,42 +54,56 @@ const Zoom = () => {
       console.log("Disconnected from socket server");
     });
 
+    peerInstance.current = new Peer(undefined, {
+      host: "localhost",
+      port: 4000,
+      path: "/peerjs/myapp",
+    });
+
+    peerInstance.current.on("open", (id) => {
+      console.log("PeerJS ID:", id);
+      setPeerId(id);
+    });
+
+    peerInstance.current.on("call", (call) => {
+      console.log("Receiving a call...");
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          myVideo.current.srcObject = stream;
+          call.answer(stream);
+          call.on("stream", (remoteStream) => {
+            userVideo.current.srcObject = remoteStream;
+          });
+        });
+    });
+
     return () => {
       socket.current.disconnect();
+      peerInstance.current.destroy();
     };
   }, []);
 
   return (
-    <div className="h-screen bg-gray-900 flex flex-col justify-center items-center">
-      <div className="flex space-x-4 mb-4">
+    <div className="h-screen bg-gray-900 flex flex-col justify-center items-center relative">
+      <div className="flex space-x-4 mb-4 relative">
         {chat && (
-          <div>
-            <Chat />
+          <div className="absolute right-4 top-0 z-50 w-80 h-3/4">
+            <Chat socket={socket.current} />
           </div>
         )}
-
-        {/* Uncomment and configure Webcam components if needed */}
-        {/* 
         <Webcam
           audio={mic}
-          video={vid}
-          height={250}
-          width={250}
           ref={myVideo}
           className="border-2 border-gray-600 rounded-lg"
         />
-       
         <Webcam
           audio={mic}
-          video={vid}
-          height={250}
-          width={250}
           ref={userVideo}
           className="border-2 border-gray-600 rounded-lg"
         />
-        */}
       </div>
-      <div className="fixed bottom-5 left-0 right-0 bg-gray-800 h-16 mx-5 rounded-lg shadow-lg flex justify-around items-center z-50">
+      <div className="fixed bottom-5 left-0 right-0 bg-gray-800 h-16 mx-5 rounded-lg shadow-lg flex justify-around items-center z-40">
         <div>
           <button
             onClick={toggleMic}
@@ -99,14 +113,13 @@ const Zoom = () => {
                 : "bg-green-500 hover:bg-green-600"
             } p-3 rounded-full`}
           >
-            {mic ? (
+            {!mic ? (
               <FaMicrophoneSlash className="text-white text-2xl" />
             ) : (
               <FaMicrophone className="text-white text-2xl" />
             )}
           </button>
         </div>
-
         <div>
           <button
             onClick={toggleVideo}
@@ -116,14 +129,13 @@ const Zoom = () => {
                 : "bg-blue-500 hover:bg-blue-600"
             } p-3 rounded-full`}
           >
-            {vid ? (
+            {!vid ? (
               <FaVideoSlash className="text-white text-2xl" />
             ) : (
               <FaVideo className="text-white text-2xl" />
             )}
           </button>
         </div>
-
         <div>
           <button className="bg-red-600 hover:bg-red-700 p-3 rounded-full">
             <FaPhoneSlash className="text-white text-2xl" />
