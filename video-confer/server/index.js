@@ -5,49 +5,31 @@ import cors from "cors";
 import { Server } from "socket.io";
 import { ExpressPeerServer } from "peer";
 
-// Create the Express app and HTTP server
 const app = express();
 const server = createServer(app);
 
-// Use CORS to allow requests from your client
 app.use(
   cors({
-    origin: "http://localhost:5173", // Allow your frontend to connect
+    origin: "http://localhost:5173",
     methods: ["GET", "POST"],
-    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+    credentials: true,
   })
 );
 
-// Create the Socket.io server with CORS options
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Allow your frontend to connect
+    origin: "http://localhost:5173",
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
 
-// Create a PeerJS server
 const peerServer = ExpressPeerServer(server, {
   debug: true,
   path: "/myapp",
 });
 
-// Use the PeerJS server
-// app.use("/peerjs", peerServer);
-
-// io.on("connection", (socket) => {
-//   console.log("A user connected:", socket.id);
-
-//   socket.on("send_message", (msg) => {
-//     console.log("Received message:", msg); // Log the received message
-//     io.emit("receive_message", msg); // Broadcast the message to all connected clients
-//   });
-
-//   socket.on("disconnect", () => {
-//     console.log("User disconnected:", socket.id);
-//   });
-// });
+app.use("/peerjs", peerServer);
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
@@ -57,17 +39,17 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("user-connected", userId);
 
     socket.on("disconnect", () => {
-      console.log("User disconnected:", socket.id);
+      console.log(`User ${userId} disconnected`);
       socket.broadcast.emit("user-disconnected", userId);
     });
   });
 
   socket.on("send_message", (msg) => {
-    console.log("Received message:", msg); // Log the received message
-    io.emit("receive_message", msg); // Broadcast the message to all connected clients
+    console.log("Received message:", msg);
+    io.emit("receive_message", msg);
   });
 });
 
 server.listen(PORT, () => {
-  console.log(`server running at http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
 });

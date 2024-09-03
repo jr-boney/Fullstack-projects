@@ -11,7 +11,6 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Peer from "peerjs";
 import io from "socket.io-client";
-import Webcam from "react-webcam";
 import Chat from "../components/Chat";
 
 const Zoom = () => {
@@ -20,26 +19,22 @@ const Zoom = () => {
   const [chat, setChat] = useState(false);
   const [peers, setPeers] = useState({});
   const myVideo = useRef(null);
-  const userVideos = useRef([]);
   const peerInstance = useRef(null);
   const socket = useRef();
 
   const toggleMic = () => {
     setMic(!mic);
     toast(`Mic turned ${mic ? "Off" : "On"}`);
-    if (myVideo.current && myVideo.current.stream) {
-      myVideo.current.stream.getAudioTracks()[0].enabled = !mic;
+    if (myVideo.current && myVideo.current.srcObject) {
+      myVideo.current.srcObject.getAudioTracks()[0].enabled = !mic;
     }
   };
 
   const toggleVideo = () => {
     setVid(!vid);
     toast(`Video turned ${vid ? "Off" : "On"}`);
-    if (myVideo.current) {
-      const videoTrack = myVideo.current.stream?.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !vid;
-      }
+    if (myVideo.current && myVideo.current.srcObject) {
+      myVideo.current.srcObject.getVideoTracks()[0].enabled = !vid;
     }
   };
 
@@ -47,8 +42,14 @@ const Zoom = () => {
     setChat(!chat);
   };
 
+  const endCall = () => {
+    socket.current.emit("leave-room");
+    socket.current.disconnect();
+    peerInstance.current.destroy();
+    window.location.reload();
+  };
+
   useEffect(() => {
-    // Initialize Socket.io
     socket.current = io("http://localhost:4000");
 
     socket.current.on("connect", () => {
@@ -59,7 +60,6 @@ const Zoom = () => {
       console.log("Disconnected from socket server");
     });
 
-    // Initialize PeerJS
     peerInstance.current = new Peer(undefined, {
       host: "localhost",
       port: 4000,
@@ -72,7 +72,6 @@ const Zoom = () => {
     });
 
     peerInstance.current.on("call", (call) => {
-      console.log("Receiving a call...");
       navigator.mediaDevices
         .getUserMedia({ video: true, audio: true })
         .then((stream) => {
@@ -85,13 +84,11 @@ const Zoom = () => {
     });
 
     socket.current.on("user-connected", (userId) => {
-      console.log("User connected:", userId);
       connectToNewUser(userId);
     });
 
     socket.current.on("user-disconnected", (userId) => {
-      console.log("User disconnected:", userId);
-      if (peers[userId]) peers[userId].close();
+      removePeerVideo(userId);
     });
 
     return () => {
@@ -113,13 +110,18 @@ const Zoom = () => {
           removePeerVideo(call.peer);
         });
 
-        setPeers((prevPeers) => ({ ...prevPeers, [userId]: call }));
+        setPeers((prevPeers) => ({
+          ...prevPeers,
+          [userId]: call,
+        }));
       });
   };
 
   const addRemoteStream = (peerId, remoteStream) => {
-    userVideos.current = [...userVideos.current, remoteStream];
-    setPeers((prevPeers) => ({ ...prevPeers, [peerId]: remoteStream }));
+    setPeers((prevPeers) => ({
+      ...prevPeers,
+      [peerId]: { ...prevPeers[peerId], stream: remoteStream },
+    }));
   };
 
   const removePeerVideo = (peerId) => {
@@ -131,39 +133,50 @@ const Zoom = () => {
   };
 
   const renderVideos = () => {
-    const videos = [
-      <Webcam
-        ref={myVideo}
-        audio={mic}
-        className="w-full h-full"
-        key="my-video"
-      />,
-    ];
+    const totalUsers = Object.keys(peers).length + 1;
+    const gridTemplateColumns = `repeat(${Math.min(totalUsers, 3)}, 1fr)`;
 
-    Object.keys(peers).forEach((peerId, index) => {
-      videos.push(
-        <video
-          key={peerId}
-          ref={(el) => (userVideos.current[index] = el)}
-          autoPlay
-          playsInline
-          className="w-full h-full"
-          srcObject={peers[peerId]}
-        />
-      );
-    });
-
-    return videos;
+    return (
+      <div
+        className={`grid grid-cols-${totalUsers} gap-4 mb-16 w-full h-full`}
+        style={{ gridTemplateColumns }}
+      >
+        <div className="aspect-w-16 aspect-h-9">
+          <video
+            ref={myVideo}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+          />
+        </div>
+        {Object.values(peers).map((peer, index) => (
+          <div key={index} className="aspect-w-16 aspect-h-9">
+            <video
+              ref={(el) => {
+                if (el && peer.stream) {
+                  el.srcObject = peer.stream;
+                  el.play();
+                }
+              }}
+              autoPlay
+              playsInline
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
-    <div className="h-screen bg-gray-900 flex flex-col justify-center items-center relative">
+    <div className="h-screen bg-gray-900 flex flex-col justify-between items-center relative overflow-hidden">
       {chat && (
-        <div className="absolute right-4 top-4 z-50 w-1/4 h-3/4">
+        <div className="absolute right-4 top-4 z-50 w-1/4 h-3/4 bg-gray-800 rounded-lg shadow-lg">
           <Chat socket={socket.current} />
         </div>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 mb-4 relative w-full max-w-screen-lg">
+      <div className="flex-1 w-full max-w-screen-lg relative">
         {renderVideos()}
       </div>
       <div className="fixed bottom-5 left-0 right-0 bg-gray-800 h-16 mx-5 rounded-lg shadow-lg flex justify-around items-center z-40">
@@ -188,8 +201,8 @@ const Zoom = () => {
             onClick={toggleVideo}
             className={`${
               vid
-                ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-blue-500 hover:bg-blue-600"
+                ? "bg-red-500 hover:bg-red-600"
+                : "bg-green-500 hover:bg-green-600"
             } p-3 rounded-full`}
           >
             {!vid ? (
@@ -200,7 +213,10 @@ const Zoom = () => {
           </button>
         </div>
         <div>
-          <button className="bg-red-600 hover:bg-red-700 p-3 rounded-full">
+          <button
+            onClick={endCall}
+            className="bg-red-600 hover:bg-red-700 p-3 rounded-full"
+          >
             <FaPhoneSlash className="text-white text-2xl" />
           </button>
         </div>
@@ -213,18 +229,7 @@ const Zoom = () => {
           </button>
         </div>
       </div>
-      <ToastContainer
-        position="top-left"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
+      <ToastContainer />
     </div>
   );
 };
