@@ -35,7 +35,7 @@ const Chat = ({ socket }) => {
   }, [chatHistory]);
 
   return (
-    <div className="w-80 h-3/4 bg-white rounded-l-lg p-4 flex flex-col justify-between shadow-lg">
+    <div className="w-full h-full bg-white rounded-lg p-4 flex flex-col justify-between shadow-lg">
       <div
         ref={scrollRef}
         className="overflow-y-auto flex-grow flex flex-col space-y-2 mb-4"

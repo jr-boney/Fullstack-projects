@@ -18,8 +18,9 @@ const Zoom = () => {
   const [mic, setMic] = useState(true);
   const [vid, setVid] = useState(true);
   const [chat, setChat] = useState(false);
+  const [peers, setPeers] = useState({});
   const myVideo = useRef(null);
-  const userVideo = useRef(null);
+  const userVideos = useRef([]);
   const peerInstance = useRef(null);
   const socket = useRef();
 
@@ -34,16 +35,20 @@ const Zoom = () => {
   const toggleVideo = () => {
     setVid(!vid);
     toast(`Video turned ${vid ? "Off" : "On"}`);
-    if (myVideo.current && myVideo.current.stream) {
-      myVideo.current.stream.getVideoTracks()[0].enabled = !vid;
+    if (myVideo.current) {
+      const videoTrack = myVideo.current.stream?.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !vid;
+      }
     }
   };
 
-  const toggle = () => {
+  const toggleChat = () => {
     setChat(!chat);
   };
 
   useEffect(() => {
+    // Initialize Socket.io
     socket.current = io("http://localhost:4000");
 
     socket.current.on("connect", () => {
@@ -54,6 +59,7 @@ const Zoom = () => {
       console.log("Disconnected from socket server");
     });
 
+    // Initialize PeerJS
     peerInstance.current = new Peer(undefined, {
       host: "localhost",
       port: 4000,
@@ -62,7 +68,7 @@ const Zoom = () => {
 
     peerInstance.current.on("open", (id) => {
       console.log("PeerJS ID:", id);
-      setPeerId(id);
+      socket.current.emit("join-room", id);
     });
 
     peerInstance.current.on("call", (call) => {
@@ -73,9 +79,19 @@ const Zoom = () => {
           myVideo.current.srcObject = stream;
           call.answer(stream);
           call.on("stream", (remoteStream) => {
-            userVideo.current.srcObject = remoteStream;
+            addRemoteStream(call.peer, remoteStream);
           });
         });
+    });
+
+    socket.current.on("user-connected", (userId) => {
+      console.log("User connected:", userId);
+      connectToNewUser(userId);
+    });
+
+    socket.current.on("user-disconnected", (userId) => {
+      console.log("User disconnected:", userId);
+      if (peers[userId]) peers[userId].close();
     });
 
     return () => {
@@ -84,24 +100,71 @@ const Zoom = () => {
     };
   }, []);
 
+  const connectToNewUser = (userId) => {
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true })
+      .then((stream) => {
+        myVideo.current.srcObject = stream;
+        const call = peerInstance.current.call(userId, stream);
+        call.on("stream", (remoteStream) => {
+          addRemoteStream(call.peer, remoteStream);
+        });
+        call.on("close", () => {
+          removePeerVideo(call.peer);
+        });
+
+        setPeers((prevPeers) => ({ ...prevPeers, [userId]: call }));
+      });
+  };
+
+  const addRemoteStream = (peerId, remoteStream) => {
+    userVideos.current = [...userVideos.current, remoteStream];
+    setPeers((prevPeers) => ({ ...prevPeers, [peerId]: remoteStream }));
+  };
+
+  const removePeerVideo = (peerId) => {
+    setPeers((prevPeers) => {
+      const updatedPeers = { ...prevPeers };
+      delete updatedPeers[peerId];
+      return updatedPeers;
+    });
+  };
+
+  const renderVideos = () => {
+    const videos = [
+      <Webcam
+        ref={myVideo}
+        audio={mic}
+        className="w-full h-full"
+        key="my-video"
+      />,
+    ];
+
+    Object.keys(peers).forEach((peerId, index) => {
+      videos.push(
+        <video
+          key={peerId}
+          ref={(el) => (userVideos.current[index] = el)}
+          autoPlay
+          playsInline
+          className="w-full h-full"
+          srcObject={peers[peerId]}
+        />
+      );
+    });
+
+    return videos;
+  };
+
   return (
     <div className="h-screen bg-gray-900 flex flex-col justify-center items-center relative">
-      <div className="flex space-x-4 mb-4 relative">
-        {chat && (
-          <div className="absolute right-4 top-0 z-50 w-80 h-3/4">
-            <Chat socket={socket.current} />
-          </div>
-        )}
-        <Webcam
-          audio={mic}
-          ref={myVideo}
-          className="border-2 border-gray-600 rounded-lg"
-        />
-        <Webcam
-          audio={mic}
-          ref={userVideo}
-          className="border-2 border-gray-600 rounded-lg"
-        />
+      {chat && (
+        <div className="absolute right-4 top-4 z-50 w-1/4 h-3/4">
+          <Chat socket={socket.current} />
+        </div>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 mb-4 relative w-full max-w-screen-lg">
+        {renderVideos()}
       </div>
       <div className="fixed bottom-5 left-0 right-0 bg-gray-800 h-16 mx-5 rounded-lg shadow-lg flex justify-around items-center z-40">
         <div>
@@ -143,7 +206,7 @@ const Zoom = () => {
         </div>
         <div>
           <button
-            onClick={toggle}
+            onClick={toggleChat}
             className="bg-blue-500 hover:bg-blue-600 p-3 rounded-full"
           >
             <BsChatLeftText className="text-white text-2xl" />

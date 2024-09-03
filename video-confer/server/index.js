@@ -34,18 +34,37 @@ const peerServer = ExpressPeerServer(server, {
 });
 
 // Use the PeerJS server
-app.use("/peerjs", peerServer);
+// app.use("/peerjs", peerServer);
+
+// io.on("connection", (socket) => {
+//   console.log("A user connected:", socket.id);
+
+//   socket.on("send_message", (msg) => {
+//     console.log("Received message:", msg); // Log the received message
+//     io.emit("receive_message", msg); // Broadcast the message to all connected clients
+//   });
+
+//   socket.on("disconnect", () => {
+//     console.log("User disconnected:", socket.id);
+//   });
+// });
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
+  socket.on("join-room", (userId) => {
+    console.log(`User ${userId} joined the room`);
+    socket.broadcast.emit("user-connected", userId);
+
+    socket.on("disconnect", () => {
+      console.log("User disconnected:", socket.id);
+      socket.broadcast.emit("user-disconnected", userId);
+    });
+  });
+
   socket.on("send_message", (msg) => {
     console.log("Received message:", msg); // Log the received message
     io.emit("receive_message", msg); // Broadcast the message to all connected clients
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
   });
 });
 
